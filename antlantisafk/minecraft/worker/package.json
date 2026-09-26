@@ -1,0 +1,11 @@
+{
+  "name": "antlantisafk-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Passive AFK worker for AntlantisAFK (keep-alives only; no gameplay automation).",
+  "license": "MIT",
+  "main": "afk_worker.js",
+  "dependencies": {
+    "minecraft-protocol": "^1.68.0"
+  }
+}

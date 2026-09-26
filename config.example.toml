@@ -1,0 +1,54 @@
+# AntlantisAFK configuration example.
+#
+# Copy the relevant values into:
+#   %APPDATA%\AntlantisAFK\config.toml
+#
+# SECURITY: never put tokens, passwords, or session IDs in this file.
+# The refresh token is stored automatically in Windows Credential Manager
+# (or an encrypted DPAPI blob) and nowhere else.
+
+# ---------------------------------------------------------------------------
+# Server — one server only
+# ---------------------------------------------------------------------------
+
+# Hostname or IP of the Minecraft: Java Edition server.
+server_address = "play.example.net"
+
+# TCP port (default 25565).
+server_port = 25565
+
+# Minecraft version: "auto" negotiates the server's version, or pin one,
+# e.g. "1.20.4". Only versions supported by the bundled protocol library work.
+minecraft_version = "auto"
+
+# ---------------------------------------------------------------------------
+# Reconnection policy
+# ---------------------------------------------------------------------------
+
+# Base delay in seconds. Each failed attempt doubles the wait
+# (5 → 10 → 20 → 40 …), capped at 10 minutes.
+reconnect_delay_seconds = 5
+
+# Give up after this many consecutive failed attempts (0 = retry forever).
+max_reconnect_attempts = 10
+
+# ---------------------------------------------------------------------------
+# Behaviour
+# ---------------------------------------------------------------------------
+
+# Hide to the system tray while the window is closed during a session.
+minimize_to_tray = false
+
+# OPTIONAL single message sent once after joining. Disabled by default.
+# AntlantisAFK refuses to send repeated messages or chat spam by design.
+join_message_enabled = false
+join_message = ""
+
+# ---------------------------------------------------------------------------
+# Microsoft login (device-code flow)
+# ---------------------------------------------------------------------------
+
+# Azure AD application (client) ID for the device-code flow. NOT a secret.
+# The app ships with a working default; only change this if you register
+# your own Azure app (see README → "Setup: Azure app registration").
+azure_client_id = "81e20f08-163a-42f1-bf44-529ceac17aba"

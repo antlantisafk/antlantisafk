@@ -1,0 +1,13 @@
+# AntlantisAFK runtime dependencies.
+# Python 3.11+ required. Windows 10/11 is the target platform.
+#
+# NOTE: the Minecraft connection uses a Node.js worker (minecraft-protocol).
+# Node.js LTS must be installed separately: https://nodejs.org/
+# See README.md → "Setup".
+
+PySide6>=6.6
+msal>=1.28
+requests>=2.31
+keyring>=24.0
+tomli-w>=1.0
+pywin32>=306 ; sys_platform == "win32"

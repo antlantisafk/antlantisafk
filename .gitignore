@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Node (worker deps)
+node_modules/
+
+# Build artifacts
+build/
+dist/
+*.spec.bak
+
+# Local secrets / environment (tokens never live here, but just in case)
+.env
+*.token
+
+# OS / editor noise
+Thumbs.db
+.DS_Store
