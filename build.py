@@ -38,15 +38,21 @@ def main() -> int:
         print(f"Worker script missing: {worker}")
         return 1
 
+    assets = ROOT / "assets"
+    if not (assets / "icon.ico").exists():
+        print(f"Brand assets missing in {assets} (icon.ico)")
+        return 1
+
     cmd = [
         pyinstaller,
         "--onefile",
         "--name", "AntlantisAFK",
         "--clean",
         "--noconfirm",
-        # Ship the worker script inside the exe; the bridge unpacks it via
-        # sys._MEIPASS at runtime.
+        # Ship the worker script and brand assets inside the exe; the
+        # bridge/theme unpack them via sys._MEIPASS at runtime.
         "--add-data", f"{worker};antlantisafk/minecraft/worker",
+        "--add-data", f"{assets};assets",
         # PySide6 pulls in far more than we use; trim the biggest offenders.
         "--exclude-module", "PySide6.QtWebEngineCore",
         "--exclude-module", "PySide6.Qt3DCore",

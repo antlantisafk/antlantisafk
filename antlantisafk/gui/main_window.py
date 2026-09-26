@@ -24,7 +24,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QFormLayout,
-    QGridLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -53,10 +53,20 @@ from ..status import (
 )
 from ..utils.validators import validate_minecraft_version  # noqa: F401 (docs)
 from .login_dialog import LoginDialog
-from .theme import COLORS, build_app_icon
+from .theme import (
+    COLORS,
+    CONTENT_MAX_WIDTH,
+    SPACE,
+    WINDOW_MAX_WIDTH,
+    build_app_icon,
+    build_wave_pixmap,
+    build_wordmark_pixmap,
+)
 from .widgets import Card, LogPanel, StatusPill
 
 logger = logging.getLogger(__name__)
+
+_RADIUS_MD = 12  # matches theme.RADIUS['md'] for inline styles
 
 _ACCOUNT_PILL_COLOR: dict[AccountStatus, str] = {
     AccountStatus.NOT_LOGGED_IN: "idle",
@@ -118,41 +128,83 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _build_ui(self) -> None:
+        """Build the AtlantisAFK interface (hero, cards, stat tiles, footer)."""
         self.setWindowTitle(f"{APP_NAME} {APP_VERSION}")
-        self.setMinimumSize(600, 700)
-        self.resize(720, 820)
-        self.setMaximumWidth(900)  # never full-bleed on wide monitors
+        self.setMinimumSize(640, 560)
+        self.resize(880, 980)
 
         central = QWidget()
         outer = QVBoxLayout(central)
         outer.setContentsMargins(0, 0, 0, 0)
-        body = QWidget()
-        body.setMaximumWidth(860)
-        body_layout = QVBoxLayout(body)
-        body_layout.setSpacing(14)
-        body_layout.setContentsMargins(20, 18, 20, 14)
-        outer.addWidget(body, 0, Qt.AlignHCenter)
-        scroll = body_layout
 
-        # Header -----------------------------------------------------------
-        header = QVBoxLayout()
-        header.setSpacing(2)
-        title = QLabel(APP_NAME)
-        title.setObjectName("Title")
-        subtitle = QLabel(
+        # Scrollable page: nothing ever clips, at any window size.
+        from PySide6.QtWidgets import QScrollArea  # noqa: PLC0415
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setStyleSheet(
+            "QScrollArea { background: transparent; }"
+            "QScrollArea > QWidget > QWidget { background: transparent; }"
+        )
+        outer.addWidget(scroll)
+
+        body = QWidget()
+        body.setMaximumWidth(CONTENT_MAX_WIDTH)
+        v = QVBoxLayout(body)
+        v.setContentsMargins(SPACE["xl"], SPACE["xl"], SPACE["xl"], SPACE["lg"])
+        v.setSpacing(SPACE["lg"])
+        scroll.setWidget(body)
+        scroll.setAlignment(Qt.AlignHCenter)
+
+        # --------------------------------------------------------------
+        # Hero banner: wave logo + wordmark + live connection status
+        # --------------------------------------------------------------
+        hero = QFrame()
+        hero.setObjectName("HeroBanner")
+        h = QHBoxLayout(hero)
+        h.setContentsMargins(SPACE["xl"], SPACE["lg"], SPACE["xl"], SPACE["lg"])
+        h.setSpacing(SPACE["lg"])
+
+        wave_label = QLabel()
+        wave_pix = build_wave_pixmap(56)
+        if wave_pix is not None:
+            wave_label.setPixmap(wave_pix)
+        wave_label.setFixedSize(56, 56)
+        wave_label.setAlignment(Qt.AlignCenter)
+        h.addWidget(wave_label, 0, Qt.AlignVCenter)
+
+        title_block = QVBoxLayout()
+        title_block.setSpacing(2)
+        wordmark = QLabel()
+        wm_pix = build_wordmark_pixmap(48)
+        if wm_pix is not None:
+            wordmark.setPixmap(wm_pix)
+        else:  # graceful fallback if assets are missing
+            wordmark.setText(APP_NAME)
+            wordmark.setStyleSheet("font-size: 26px; font-weight: 800;")
+        title_block.addWidget(wordmark)
+        tagline = QLabel(
             "Single-account AFK companion for Minecraft: Java Edition — "
             "keep-alives only, no gameplay automation."
         )
-        subtitle.setObjectName("Subtitle")
-        header.addWidget(title)
-        header.addWidget(subtitle)
-        scroll.addLayout(header)
+        tagline.setObjectName("Subtitle")
+        tagline.setWordWrap(True)
+        title_block.addWidget(tagline)
+        h.addLayout(title_block, 1)
 
-        # Account card -------------------------------------------------------
-        account_card = Card("Account — one account only")
+        self._conn_pill = StatusPill("Disconnected", "idle")
+        h.addWidget(self._conn_pill, 0, Qt.AlignVCenter)
+        v.addWidget(hero)
+
+        # --------------------------------------------------------------
+        # Account card
+        # --------------------------------------------------------------
+        account_card = Card("ACCOUNT — ONE ACCOUNT ONLY")
         form1 = QFormLayout()
-        form1.setHorizontalSpacing(14)
-        form1.setVerticalSpacing(12)
+        form1.setHorizontalSpacing(SPACE["lg"])
+        form1.setVerticalSpacing(SPACE["md"])
         self._username_label = QLabel("—")
         self._username_label.setStyleSheet("font-size: 15px; font-weight: 600;")
         self._account_pill = StatusPill("Not logged in", "idle")
@@ -162,28 +214,33 @@ class MainWindow(QMainWindow):
         self._logout_btn = QPushButton("Logout / Delete Credentials")
         self._logout_btn.setObjectName("Danger")
         self._logout_btn.clicked.connect(self._on_logout)
-        row = QHBoxLayout()
-        row.addWidget(self._login_btn)
-        row.addWidget(self._logout_btn)
-        row.addStretch(1)
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(SPACE["sm"])
+        btn_row.addWidget(self._login_btn)
+        btn_row.addWidget(self._logout_btn)
+        btn_row.addStretch(1)
         form1.addRow("Profile:", self._username_label)
         form1.addRow("Status:", self._account_pill)
-        form1.addRow(row)
+        form1.addRow(btn_row)
         account_card.body().addLayout(form1)
-        scroll.addWidget(account_card)
+        v.addWidget(account_card)
 
-        # Server card --------------------------------------------------------
-        server_card = Card("Server — one server only")
+        # --------------------------------------------------------------
+        # Server card
+        # --------------------------------------------------------------
+        server_card = Card("SERVER — ONE SERVER ONLY")
         form2 = QFormLayout()
-        form2.setHorizontalSpacing(14)
-        form2.setVerticalSpacing(12)
+        form2.setHorizontalSpacing(SPACE["lg"])
+        form2.setVerticalSpacing(SPACE["md"])
         self._server_edit = QLineEdit(self._config.server_address)
         self._server_edit.setPlaceholderText("play.example.net or 203.0.113.10")
         self._port_spin = QSpinBox()
         self._port_spin.setRange(1, 65535)
         self._port_spin.setValue(int(self._config.server_port))
+        self._port_spin.setMaximumWidth(160)
         self._version_edit = QLineEdit(self._config.minecraft_version)
         self._version_edit.setPlaceholderText("auto")
+        self._version_edit.setMaximumWidth(220)
         self._version_edit.setToolTip(
             "'auto' negotiates the server's version, or enter e.g. 1.20.4."
         )
@@ -191,55 +248,78 @@ class MainWindow(QMainWindow):
         form2.addRow("Port:", self._port_spin)
         form2.addRow("Minecraft version:", self._version_edit)
         server_card.body().addLayout(form2)
-        scroll.addWidget(server_card)
+        v.addWidget(server_card)
 
-        # Control row --------------------------------------------------------
+        # --------------------------------------------------------------
+        # Control row: Start (enabled only when ready) / Stop (only when live)
+        # --------------------------------------------------------------
         control_row = QHBoxLayout()
-        self._start_btn = QPushButton("Start AFK")
+        control_row.setSpacing(SPACE["sm"])
+        self._start_btn = QPushButton("▶  Start AFK")
         self._start_btn.setObjectName("Primary")
+        self._start_btn.setFixedHeight(52)
+        self._start_btn.setMinimumWidth(190)
+        self._start_btn.setCursor(Qt.PointingHandCursor)
         self._start_btn.clicked.connect(self._on_start_clicked)
-        self._stop_btn = QPushButton("Stop")
+        self._stop_btn = QPushButton("■  Stop")
         self._stop_btn.setObjectName("Danger")
+        self._stop_btn.setFixedHeight(52)
+        self._stop_btn.setMinimumWidth(130)
+        self._stop_btn.setCursor(Qt.PointingHandCursor)
         self._stop_btn.clicked.connect(self._on_stop_clicked)
-        self._stop_btn.setEnabled(False)
+        self._stop_btn.setEnabled(False)  # nothing to stop until AFK starts
         control_row.addWidget(self._start_btn)
         control_row.addWidget(self._stop_btn)
         control_row.addStretch(1)
-        scroll.addLayout(control_row)
+        v.addLayout(control_row)
 
-        # Status card ----------------------------------------------------------
-        status_card = Card("Status")
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(16)
-        grid.setVerticalSpacing(12)
-        grid.addWidget(QLabel("Connection:"), 0, 0)
-        self._conn_pill = StatusPill("Disconnected", "idle")
-        grid.addWidget(self._conn_pill, 0, 1, Qt.AlignLeft)
-        grid.addWidget(QLabel("Uptime:"), 0, 2)
-        self._uptime_label = QLabel("00:00:00")
-        grid.addWidget(self._uptime_label, 0, 3, Qt.AlignLeft)
-        grid.addWidget(QLabel("Reconnects:"), 1, 0)
-        self._reconnects_label = QLabel("0")
-        grid.addWidget(self._reconnects_label, 1, 1, Qt.AlignLeft)
-        grid.addWidget(QLabel("Next retry:"), 1, 2)
-        self._retry_label = QLabel("—")
-        grid.addWidget(self._retry_label, 1, 3, Qt.AlignLeft)
-        status_card.body().addLayout(grid)
-        scroll.addWidget(status_card)
+        # --------------------------------------------------------------
+        # Stat tiles: uptime / reconnects / next retry
+        # --------------------------------------------------------------
+        stats_row = QHBoxLayout()
+        stats_row.setSpacing(SPACE["md"])
 
-        # Log card ------------------------------------------------------------
-        log_card = Card("Log")
+        def _stat_tile(label_text: str) -> tuple[QFrame, QLabel]:
+            frame = QFrame()
+            frame.setObjectName("StatTile")
+            lay = QVBoxLayout(frame)
+            lay.setContentsMargins(SPACE["lg"], SPACE["md"], SPACE["lg"], SPACE["md"])
+            lay.setSpacing(2)
+            lbl = QLabel(label_text)
+            lbl.setObjectName("StatLabel")
+            val = QLabel("—")
+            val.setObjectName("StatValue")
+            lay.addWidget(lbl)
+            lay.addWidget(val)
+            return frame, val
+
+        uptime_tile, self._uptime_label = _stat_tile("UPTIME")
+        reconnect_tile, self._reconnects_label = _stat_tile("RECONNECTS")
+        retry_tile, self._retry_label = _stat_tile("NEXT RETRY")
+        self._uptime_label.setText("00:00:00")
+        self._reconnects_label.setText("0")
+        stats_row.addWidget(uptime_tile, 1)
+        stats_row.addWidget(reconnect_tile, 1)
+        stats_row.addWidget(retry_tile, 1)
+        v.addLayout(stats_row)
+
+        # --------------------------------------------------------------
+        # Log card
+        # --------------------------------------------------------------
+        log_card = Card("LOG")
         self._log_panel = LogPanel()
         self._log_panel.attach_to_logger()
-        self._log_panel.setMinimumHeight(170)
+        self._log_panel.setMinimumHeight(180)
         log_card.body().addWidget(self._log_panel)
-        scroll.addWidget(log_card)
+        v.addWidget(log_card)
 
-        # Settings card ---------------------------------------------------------
-        settings_card = Card("Settings")
+        # --------------------------------------------------------------
+        # Settings card
+        # --------------------------------------------------------------
+        settings_card = Card("SETTINGS")
         form3 = QFormLayout()
-        form3.setHorizontalSpacing(14)
-        form3.setVerticalSpacing(12)
+        form3.setHorizontalSpacing(SPACE["lg"])
+        form3.setVerticalSpacing(SPACE["md"])
         self._delay_spin = QSpinBox()
         self._delay_spin.setRange(0, 600)
         self._delay_spin.setValue(int(self._config.reconnect_delay_seconds))
@@ -254,23 +334,36 @@ class MainWindow(QMainWindow):
         form3.addRow("Max reconnect attempts:", self._retries_spin)
         form3.addRow(self._tray_check)
         settings_card.body().addLayout(form3)
-        scroll.addWidget(settings_card)
+        v.addWidget(settings_card)
 
-        # Footer ---------------------------------------------------------------
-        footer = QHBoxLayout()
+        # --------------------------------------------------------------
+        # Warning band + version footer
+        # --------------------------------------------------------------
+        warn_frame = QFrame()
+        warn_frame.setStyleSheet(
+            "QFrame { background: rgba(251, 191, 36, 0.06); "
+            "border: 1px solid rgba(251, 191, 36, 0.40); "
+            f"border-radius: {_RADIUS_MD}px; }}"
+        )
+        warn_layout = QHBoxLayout(warn_frame)
+        warn_layout.setContentsMargins(SPACE["lg"], SPACE["sm"], SPACE["lg"], SPACE["sm"])
         disclaimer = QLabel(
-            f"<a href='{DISCLAIMER_URL}'>AFK clients may violate server rules "
-            "— use only on servers where AFK is explicitly allowed, and only "
-            "with your own account.</a>"
+            "⚠️  AFK clients may violate server rules — use only on servers "
+            f"where AFK is explicitly allowed, and only with your own account. "
+            f"<a href='{DISCLAIMER_URL}' style='color:{COLORS['warning']};'>Learn more</a>."
         )
         disclaimer.setObjectName("Disclaimer")
         disclaimer.setOpenExternalLinks(True)
         disclaimer.setWordWrap(True)
-        footer.addWidget(disclaimer, 1)
+        warn_layout.addWidget(disclaimer, 1)
+        v.addWidget(warn_frame)
+
+        footer = QHBoxLayout()
+        footer.addStretch(1)
         version = QLabel(f"v{APP_VERSION}")
-        version.setStyleSheet(f"color: {COLORS['muted']};")
+        version.setStyleSheet(f"color: {COLORS['muted']}; font-size: 12px;")
         footer.addWidget(version)
-        scroll.addLayout(footer)
+        v.addLayout(footer)
 
         self.setCentralWidget(central)
 

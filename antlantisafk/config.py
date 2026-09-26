@@ -170,7 +170,7 @@ class ConfigManager:
 
         cfg = AppConfig.from_dict(data)
         try:
-            cfg.validate()
+            cfg.validate(require_server_address=False)
         except ConfigError as exc:
             logger.error("Invalid config values: %s. Using defaults.", exc)
             return AppConfig()
