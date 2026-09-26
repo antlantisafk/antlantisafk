@@ -21,3 +21,5 @@ dist/
 # OS / editor noise
 Thumbs.db
 .DS_Store
+build_runtime/
+dist/
