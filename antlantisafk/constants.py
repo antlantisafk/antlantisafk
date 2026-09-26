@@ -10,7 +10,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import APP_NAME
+from . import APP_ID, APP_NAME
 
 # ---------------------------------------------------------------------------
 # Identity / branding
@@ -36,9 +36,13 @@ DEFAULT_AZURE_CLIENT_ID: str = "81e20f08-163a-42f1-bf44-529ceac17aba"
 
 
 def appdata_dir() -> Path:
-    """Return (creating if needed) the per-user application data directory."""
+    """Return (creating if needed) the per-user application data directory.
+
+    Uses the stable internal APP_ID so branding renames never orphan a
+    user's config, logs, or stored credentials.
+    """
     base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
-    path = Path(base) / APP_NAME
+    path = Path(base) / APP_ID
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -74,8 +78,9 @@ def refresh_token_file() -> Path:
 # Secure token storage identifiers
 # ---------------------------------------------------------------------------
 
-#: Service name used in Windows Credential Manager via ``keyring``.
-KEYRING_SERVICE: str = APP_NAME
+#: Service name used in Windows Credential Manager via ``keyring``
+#: (stable internal id, survives branding renames).
+KEYRING_SERVICE: str = APP_ID
 #: Account/username entry under the service in the credential manager.
 KEYRING_USERNAME: str = "refresh_token"
 
@@ -91,7 +96,8 @@ LOG_FORMAT: str = "%(asctime)s [%(levelname)-8s] %(name)s: %(message)s"
 # Single-instance coordination
 # ---------------------------------------------------------------------------
 
-#: Name of the Win32 mutex (or lock file) enforcing a single running instance.
+#: Name of the Win32 mutex (or lock file) enforcing a single running
+#: instance (stable internal id).
 SINGLE_INSTANCE_MUTEX: str = "AntlantisAFK-{fingerprint}-SingleInstanceMutex"
 #: Local TCP port used to ask an already-running instance to show its window.
 FOCUS_PORT_BASE: int = 49000

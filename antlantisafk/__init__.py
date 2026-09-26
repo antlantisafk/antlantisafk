@@ -13,9 +13,10 @@ Strict compliance rules (see README.md "Legal & Safety"):
 
 from __future__ import annotations
 
-APP_NAME: str = "AntlantisAFK"
+APP_NAME: str = "AtlantisAFK"          # display name (user-visible)
+APP_ID: str = "AntlantisAFK"           # stable internal id (paths, storage)
 APP_VERSION: str = "0.1.0"
-APP_AUTHOR: str = "AntlantisAFK contributors"
+APP_AUTHOR: str = "AtlantisAFK contributors"
 APP_DESCRIPTION: str = "Single-account AFK companion for Minecraft: Java Edition"
 
-__all__ = ["APP_NAME", "APP_VERSION", "APP_AUTHOR", "APP_DESCRIPTION"]
+__all__ = ["APP_NAME", "APP_ID", "APP_VERSION", "APP_AUTHOR", "APP_DESCRIPTION"]

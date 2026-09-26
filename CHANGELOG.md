@@ -5,6 +5,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.1.0] — 2026-09-26
 
+### Branding & UI
+
+- Full visual identity from the AtlantisAFK wave logo: exe/window/tray icon,
+  wordmark hero banner, ocean-palette design system.
+- Complete UI redesign: hero banner with live status, stat tiles
+  (uptime/reconnects/next-retry), scrollable layout, styled scrollbars,
+  proper button states (Stop disabled until AFK is running).
+- Login dialog retitled to "Sign in to AtlantisAFK".
+
+### Packaging
+
+- **Fully standalone `AtlantisAFK.exe`** (~120 MB): bundled Node.js runtime
+  + worker dependencies + branded assets; end users need only the exe.
+- `build.py` assembles the runtime automatically (local Node or official
+  download) and falls back to `python -m PyInstaller` for --user installs.
+
+### Fixes
+
+- MSAL reserved-scope rejection (login now requests only `XboxLive.signin`).
+- DPAPI `Reserved=None` requirement and `CryptUnprotectData` parameter order.
+- Missing `_load_refresh` helper in silent session restore.
+- Login-dialog cancel crash (`QObject.disconnect` misuse) with cancelled-flag.
+- Config save/load no longer demands a server address; settings persist.
+- Built-in Azure client ID; status-pill layout; label transparency.
+
 ### Added
 
 - Single-account Microsoft authentication via the **official OAuth 2.0

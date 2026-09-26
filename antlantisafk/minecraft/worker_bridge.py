@@ -68,36 +68,54 @@ class WorkerBridge:
 
     @staticmethod
     def _default_worker_script() -> Path:
-        """Locate ``afk_worker.js`` next to the package (source or frozen)."""
+        """Locate ``afk_worker.js`` (source tree, frozen bundle, or override)."""
         import sys
 
+        override = os.environ.get("ANTLANTISAFK_WORKER")
+        if override and Path(override).exists():
+            return Path(override)
         if getattr(sys, "frozen", False):
             base = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
-        else:
-            base = Path(__file__).resolve().parent
-        return base / "worker" / "afk_worker.js"
+            for candidate in (
+                base / "runtime" / "afk_worker.js",
+                base / "antlantisafk" / "minecraft" / "worker" / "afk_worker.js",
+            ):
+                if candidate.exists():
+                    return candidate
+        return Path(__file__).resolve().parent / "worker" / "afk_worker.js"
 
     def find_node(self) -> str:
         """Return the path to a Node.js runtime.
 
-        Also honours the ``ANTLANTISAFK_NODE`` environment variable for
-        non-PATH installations.
+        Order: ``ANTLANTISAFK_NODE`` env var, the bundled runtime inside a
+        frozen exe (``runtime/node.exe``), a ``node.exe`` beside the worker
+        script, then the system PATH.
 
         Raises:
             WorkerNotFoundError: No Node.js runtime could be located.
         """
+        import sys
+
         custom = os.environ.get("ANTLANTISAFK_NODE")
         if custom and Path(custom).exists():
             return custom
+        if getattr(sys, "frozen", False):
+            base = Path(getattr(sys, "_MEIPASS", Path(sys.executable).parent))
+            bundled = base / "runtime" / "node.exe"
+            if bundled.exists():
+                return str(bundled)
+        beside_worker = self._worker_script.parent / "node.exe"
+        if beside_worker.exists():
+            return str(beside_worker)
         for candidate in _NODE_CANDIDATES:
             path = shutil.which(candidate)
             if path:
                 return path
         raise WorkerNotFoundError(
-            "Node.js was not found. Install the LTS version from "
-            "https://nodejs.org/ (or set ANTLANTISAFK_NODE to the node.exe "
-            "path) and make sure 'npm install minecraft-protocol' has been "
-            "run in the app's worker folder. See README 'Troubleshooting'."
+            "Node.js was not found. This build should include a bundled "
+            "runtime; if it does not, install the LTS version from "
+            "https://nodejs.org/ and run 'npm install minecraft-protocol' "
+            "in the app's worker folder. See README 'Troubleshooting'."
         )
 
     def ensure_worker_dependencies(self) -> None:

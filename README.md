@@ -1,10 +1,29 @@
-# AntlantisAFK
+# AtlantisAFK
+
+![AtlantisAFK](assets/wordmark.png)
 
 A personal, single-account **AFK companion for Minecraft: Java Edition**.
 It keeps **one** Microsoft/Minecraft account (yours) connected to **one**
 server and responds only to keep-alive packets. It is an AFK client, not a
 bot: there is **no** movement, mining, combat, chat automation, or any other
 gameplay automation — by design, such code paths do not exist.
+
+## 🚀 Quick start (most users)
+
+1. Download **`AtlantisAFK.exe`** from
+   [Releases](https://github.com/antlantisafk/antlantisafk/releases) —
+   everything (Node.js runtime, protocol library, branding) is bundled.
+   No Python, no Node, no setup.
+2. Run it, click **Login with Microsoft**, complete the browser sign-in.
+3. Type your server address and click **Start AFK**.
+
+> **Note:** new Microsoft-app registrations require a one-time allow-list
+> review by Mojang before `login_with_xbox` works
+> ([policy](https://aka.ms/AppRegInfo)). Until the bundled AppID is approved
+> you may see *"Invalid app registration"* at the final login step — this is
+> expected and temporary. See [Troubleshooting](#troubleshooting).
+
+---
 
 - **Platform:** Windows 10/11 (Python 3.11+; GUI via PySide6)
 - **Auth:** official Microsoft OAuth 2.0 device-code flow (you sign in with
@@ -127,18 +146,15 @@ py -3 main.py
 ```bat
 cd AntlantisAFK
 py -3 -m pip install -r requirements-dev.txt
-build.bat
+cd antlantisafk\minecraft\worker && npm install && cd ..\..\..
+py -3 build.py
 ```
 
-Result: `dist\AntlantisAFK.exe` (one file, no console window). A clean
-Windows 10/11 machine needs **no Python installed** — but the Node.js worker
-still needs Node.js LTS and `npm install minecraft-protocol` inside the
-worker folder next to the exe (copy `antlantisafk/minecraft/worker/` and run
-`npm install` there once). Bundling a fully standalone worker is documented
-in `build.py` comments (pkg / node SEA).
-
-Optional icon: place `assets/icon.ico` before building; it is picked up
-automatically (a generated icon is used otherwise).
+Result: `dist\AtlantisAFK.exe` (~120 MB) — a **fully self-contained** build:
+wave icon, PySide6 GUI, a bundled Node.js runtime, and the
+`minecraft-protocol` worker all inside one file. End users need nothing but
+the exe. Use `py -3 build.py --no-runtime` for a smaller exe that requires
+Node.js on the user's PC.
 
 ## How to use the app
 
@@ -174,6 +190,7 @@ travels to the worker only over its stdin pipe, never via command line.
 
 | Problem | Fix |
 |---|---|
+| "Invalid app registration" (HTTP 403) at the Minecraft step | Mojang's AppID allow-list review is pending ([policy](https://aka.ms/AppRegInfo), submit [here](https://aka.ms/mce-reviewappid)). Everything before it works; retry after approval. |
 | "No Azure application (client) ID configured" | Do **Setup: Azure app registration** above. |
 | Device code rejected / loop | Make sure "Allow public client flows" = Yes on your Azure app, and you are signing in with a **personal** Microsoft account that owns Java Edition. |
 | "This Microsoft account has no Xbox profile" | Sign in once at <https://www.xbox.com> with that account, then retry. |
