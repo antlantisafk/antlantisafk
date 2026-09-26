@@ -1,4 +1,4 @@
-"""AntlantisAFK — a personal, single-account AFK companion for Minecraft: Java Edition.
+"""AtlantisAFK — a personal, single-account AFK companion for Minecraft: Java Edition.
 
 This application keeps ONE user-owned Microsoft/Minecraft account connected to
 ONE Minecraft server, responding only to keep-alive packets. It performs no
@@ -14,8 +14,8 @@ Strict compliance rules (see README.md "Legal & Safety"):
 from __future__ import annotations
 
 APP_NAME: str = "AtlantisAFK"          # display name (user-visible)
-APP_ID: str = "AntlantisAFK"           # stable internal id (paths, storage)
-APP_VERSION: str = "0.1.0"
+APP_ID: str = "AtlantisAFK"            # stable internal id (paths, storage)
+APP_VERSION: str = "0.2.0"
 APP_AUTHOR: str = "AtlantisAFK contributors"
 APP_DESCRIPTION: str = "Single-account AFK companion for Minecraft: Java Edition"
 

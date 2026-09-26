@@ -250,6 +250,9 @@ class MainWindow(QMainWindow):
         server_card.body().addLayout(form2)
         v.addWidget(server_card)
 
+        # Enter in the address field starts the session.
+        self._server_edit.returnPressed.connect(self._on_start_clicked)
+
         # --------------------------------------------------------------
         # Control row: Start (enabled only when ready) / Stop (only when live)
         # --------------------------------------------------------------
@@ -304,12 +307,21 @@ class MainWindow(QMainWindow):
         v.addLayout(stats_row)
 
         # --------------------------------------------------------------
-        # Log card
+        # Log card (with a Clear action in the header)
         # --------------------------------------------------------------
-        log_card = Card("LOG")
+        clear_btn = QPushButton("Clear")
+        clear_btn.setCursor(Qt.PointingHandCursor)
+        clear_btn.setFixedHeight(26)
+        clear_btn.setStyleSheet(
+            f"QPushButton {{ padding: 2px 12px; font-size: 12px; "
+            f"color: {COLORS['muted']}; }}"
+            f"QPushButton:hover {{ color: {COLORS['text']}; }}"
+        )
         self._log_panel = LogPanel()
         self._log_panel.attach_to_logger()
         self._log_panel.setMinimumHeight(180)
+        log_card = Card("LOG", action=clear_btn)
+        clear_btn.clicked.connect(self._log_panel.clear)
         log_card.body().addWidget(self._log_panel)
         v.addWidget(log_card)
 
@@ -360,8 +372,9 @@ class MainWindow(QMainWindow):
 
         footer = QHBoxLayout()
         footer.addStretch(1)
+        footer.addStretch(1)
         version = QLabel(f"v{APP_VERSION}")
-        version.setStyleSheet(f"color: {COLORS['muted']}; font-size: 12px;")
+        version.setObjectName("VersionChip")
         footer.addWidget(version)
         v.addLayout(footer)
 
@@ -606,8 +619,6 @@ class MainWindow(QMainWindow):
         ) and self._session.snapshot().state != SessionState.STOPPING
 
     def _on_session_changed(self, snapshot: SessionSnapshot) -> None:
-        from ..status import ConnectionStatus as _CS  # noqa: PLC0415
-
         mapping = {
             SessionState.IDLE: ConnectionStatus.DISCONNECTED,
             SessionState.CONNECTING: ConnectionStatus.CONNECTING,
@@ -620,6 +631,10 @@ class MainWindow(QMainWindow):
         self._conn_pill.set_status(
             CONNECTION_STATUS_TEXT[conn_status], _CONN_PILL_COLOR[conn_status]
         )
+        # Pulse while transient states are in progress.
+        self._conn_pill.set_pulse(snapshot.state in (
+            SessionState.CONNECTING, SessionState.WAITING_RETRY,
+        ))
         self._uptime_label.setText(self._format_uptime(snapshot.uptime_seconds))
         self._reconnects_label.setText(str(snapshot.reconnect_count))
         if snapshot.next_retry_at is not None:

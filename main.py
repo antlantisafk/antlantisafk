@@ -36,6 +36,13 @@ def main() -> int:
     logger.info("%s v%s starting (python %s).", APP_NAME, APP_VERSION,
                 sys.version.split()[0])
 
+    # Move pre-rebrand data (%APPDATA%\AntlantisAFK) into the new folder so
+    # existing users keep their config, logs, and stored login.
+    from antlantisafk.constants import migrate_legacy_appdata
+
+    if migrate_legacy_appdata():
+        logger.info("Legacy data migration complete.")
+
     # Fail fast with a clear message on unsupported platforms.
     if not is_windows():
         logger.warning(
@@ -67,7 +74,8 @@ def main() -> int:
         # Azure client id: environment variable, then config file, then the
         # built-in default. (The client ID is not a secret.)
         client_id = (
-            os.environ.get("ANTLANTISAFK_CLIENT_ID", "").strip()
+            os.environ.get("ATLANTISAFK_CLIENT_ID", "").strip()
+            or os.environ.get("ANTLANTISAFK_CLIENT_ID", "").strip()  # legacy alias
             or config.azure_client_id
             or DEFAULT_AZURE_CLIENT_ID
         )

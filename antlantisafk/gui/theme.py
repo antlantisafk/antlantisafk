@@ -106,6 +106,19 @@ def build_stylesheet() -> str:
         border: 1px solid {c['card_border']};
         border-radius: {r['lg']}px;
     }}
+    QFrame#Card:hover {{ border-color: {c['accent_deep']}; }}
+
+    QFrame#StatusPill {{
+        background: {c['input_bg']};
+        border: 1px solid {c['input_border']};
+        border-radius: 14px;
+    }}
+    QLabel#VersionChip {{
+        color: {c['muted']}; font-size: 11px; font-weight: 600;
+        background: {c['card']};
+        border: 1px solid {c['card_border']};
+        border-radius: 10px; padding: 2px 10px;
+    }}
 
     QLineEdit, QSpinBox {{
         background: {c['input_bg']};

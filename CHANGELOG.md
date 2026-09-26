@@ -3,6 +3,23 @@
 All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] — 2026-09-26
+
+### Changed
+
+- **Unified AtlantisAFK branding everywhere**, including the data folder:
+  `%APPDATA%\AntlantisAFK` → `%APPDATA%\AtlantisAFK`. Existing installs
+  migrate automatically on first launch (config, logs, stored login).
+- Environment variables renamed to `ATLANTISAFK_*`; the old
+  `ANTLANTISAFK_*` names keep working as aliases.
+
+### UI polish
+
+- Capsule status pills with a soft pulse animation while connecting or
+  reconnecting; status-tinted text.
+- Cards highlight on hover; log panel gained a Clear button; version chip in
+  the footer; pressing Enter in the server field starts the session.
+
 ## [0.1.0] — 2026-09-26
 
 ### Branding & UI

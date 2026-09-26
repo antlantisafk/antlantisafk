@@ -71,7 +71,8 @@ class WorkerBridge:
         """Locate ``afk_worker.js`` (source tree, frozen bundle, or override)."""
         import sys
 
-        override = os.environ.get("ANTLANTISAFK_WORKER")
+        override = (os.environ.get("ATLANTISAFK_WORKER")
+                    or os.environ.get("ANTLANTISAFK_WORKER"))  # legacy alias
         if override and Path(override).exists():
             return Path(override)
         if getattr(sys, "frozen", False):
@@ -96,7 +97,8 @@ class WorkerBridge:
         """
         import sys
 
-        custom = os.environ.get("ANTLANTISAFK_NODE")
+        custom = (os.environ.get("ATLANTISAFK_NODE")
+                  or os.environ.get("ANTLANTISAFK_NODE"))  # legacy alias
         if custom and Path(custom).exists():
             return custom
         if getattr(sys, "frozen", False):

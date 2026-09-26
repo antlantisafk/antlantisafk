@@ -7,6 +7,7 @@ app works both from source and from a frozen PyInstaller executable.
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -98,7 +99,7 @@ LOG_FORMAT: str = "%(asctime)s [%(levelname)-8s] %(name)s: %(message)s"
 
 #: Name of the Win32 mutex (or lock file) enforcing a single running
 #: instance (stable internal id).
-SINGLE_INSTANCE_MUTEX: str = "AntlantisAFK-{fingerprint}-SingleInstanceMutex"
+SINGLE_INSTANCE_MUTEX: str = "AtlantisAFK-{fingerprint}-SingleInstanceMutex"
 #: Local TCP port used to ask an already-running instance to show its window.
 FOCUS_PORT_BASE: int = 49000
 
@@ -115,3 +116,50 @@ def is_frozen() -> bool:
 def is_windows() -> bool:
     """True when running on Windows."""
     return sys.platform.startswith("win")
+
+
+# ---------------------------------------------------------------------------
+# Legacy data migration (pre-rebrand folder name)
+# ---------------------------------------------------------------------------
+
+#: Folder name used by builds before the AtlantisAFK rebrand.
+LEGACY_APPDATA_NAME: str = "AntlantisAFK"
+
+
+def migrate_legacy_appdata() -> bool:
+    """Move pre-rebrand ``%APPDATA%\\AntlantisAFK`` data to the new name.
+
+    Copies config, logs, and DPAPI token blobs into the new folder (existing
+    files in the destination win, so a newer install is never downgraded),
+    then removes the empty legacy folder. Safe to call on every startup.
+
+    Returns:
+        True when any data was migrated.
+    """
+    base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
+    legacy = Path(base) / LEGACY_APPDATA_NAME
+    if not legacy.exists() or legacy.resolve() == appdata_dir().resolve():
+        return False
+
+    moved: list[str] = []
+    for item in legacy.iterdir():
+        dest = appdata_dir() / item.name
+        if dest.exists():
+            continue  # destination already has newer data; keep it
+        try:
+            shutil.move(str(item), str(dest))
+            moved.append(item.name)
+        except OSError:
+            continue
+    try:
+        if not any(legacy.iterdir()):
+            legacy.rmdir()
+    except OSError:
+        pass
+    if moved:
+        import logging
+
+        logging.getLogger(APP_NAME).info(
+            "Migrated legacy data from %s: %s", legacy.name, ", ".join(moved)
+        )
+    return bool(moved)
